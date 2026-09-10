@@ -1,0 +1,38 @@
+:root {
+  --bg: #FFFFFF;
+  --surface: #F3F1ED;
+  --surface-2: #E9E6E0;
+  --ink: #101010;
+  --ink-2: #6E6A64;
+  --ink-inv: #FFFFFF;
+  --line: #E4E0D9;
+  --accent: #FFE01B;
+  --dark: #101010;
+
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 40px;
+  --s-7: 64px;
+
+  --r-card: 6px;
+  --r-pill: 999px;
+
+  --gutter: var(--s-5);
+  --poster-ratio: 148 / 219;
+  --header-h: 64px;
+  --nav-h: 64px;
+  --focus: 2px solid var(--ink);
+}
+
+@media (min-width: 900px) {
+  :root {
+    --gutter: var(--s-7);
+    --header-h: 76px;
+  }
+}

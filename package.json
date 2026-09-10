@@ -1,0 +1,60 @@
+{
+  "name": "showtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "run-p lint typecheck \"build-only {@}\" --",
+    "preview": "vite preview",
+    "test:unit": "vitest --watch",
+    "test:unit:coverage": "vitest run --coverage",
+    "test:unit:ui": "vitest --ui --coverage --api=8090",
+    "test:e2e": "playwright test",
+    "test:e2e:browser": "playwright test --ui",
+    "build-only": "vite build",
+    "typecheck": "vue-tsc --build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "release": "changelogen --release --push"
+  },
+  "dependencies": {
+    "nitro": "3.0.260610-beta",
+    "pinia": "4.0.3",
+    "vue": "3.5.41",
+    "vue-i18n": "11.4.10",
+    "vue-router": "5.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@tsconfig/node24": "24.0.4",
+    "@types/jsdom": "28.0.3",
+    "@types/node": "24.13.3",
+    "@typescript-eslint/parser": "8.67.0",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/ui": "4.1.11",
+    "@vue/eslint-config-typescript": "14.9.0",
+    "@vue/test-utils": "2.4.11",
+    "@vue/tsconfig": "0.9.1",
+    "changelogen": "0.6.2",
+    "eslint": "10.9.1",
+    "eslint-plugin-perfectionist": "5.10.1",
+    "eslint-plugin-playwright": "2.11.0",
+    "eslint-plugin-unused-imports": "4.4.1",
+    "eslint-plugin-vue": "10.10.0",
+    "globals": "17.11.0",
+    "jsdom": "29.1.1",
+    "npm-run-all2": "9.0.2",
+    "typescript": "6.0.3",
+    "vite": "8.2.1",
+    "vite-plugin-vue-devtools": "8.2.1",
+    "vitest": "4.1.11",
+    "vue-eslint-parser": "10.4.1",
+    "vue-tsc": "3.3.10"
+  },
+  "engines": {
+    "node": "22.18.0 || >=24.12.0"
+  }
+}

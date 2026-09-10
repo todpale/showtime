@@ -1,0 +1,120 @@
+{
+  "action": {
+    "name": "Action",
+    "add": "Add to list",
+    "back": "Back",
+    "clear": "Clear",
+    "close": "Close",
+    "download": "Download",
+    "inList": "In My List",
+    "loadMore": "Load more",
+    "more": "More options",
+    "remove": "Remove",
+    "reset": "Reset filters",
+    "retry": "Try again",
+    "seeAll": "See all",
+    "share": "Share",
+    "startWatching": "Start watching",
+    "watch": "Watch now"
+  },
+  "app": {
+    "name": "Showtime",
+    "menu": "Open menu"
+  },
+  "episode": {
+    "name": "Episode | Episodes",
+    "air": "Air date",
+    "code": "S{season}:E{number}",
+    "count": "{count} episode | {count} episodes",
+    "empty": "No episodes are listed for this show yet.",
+    "runtime": "{minutes}m"
+  },
+  "filter": {
+    "name": "Filter",
+    "any": "Any",
+    "genre": "Filter by genre",
+    "minRating": "Minimum rating",
+    "open": "Open filters",
+    "rating": "Rating {min}+",
+    "year": "Year"
+  },
+  "footer": {
+    "name": "Footer",
+    "about": "About",
+    "device": "Devices",
+    "help": "Help",
+    "term": "Terms"
+  },
+  "genre": {
+    "name": "Genre | Genres",
+    "all": "All",
+    "browse": "Browse genres",
+    "browseBy": "Browse by genre",
+    "count": "{count} show | {count} shows",
+    "empty": "No shows match these filters.",
+    "moreError": "More shows could not be loaded.",
+    "showing": "Showing {shown} of {total}",
+    "sorted": "{count} shows · sorted by {sort}",
+    "topRated": "Top rated · {count} shows"
+  },
+  "home": {
+    "name": "Home",
+    "empty": "The catalogue is empty right now.",
+    "featured": "Featured this week"
+  },
+  "list": {
+    "name": "My List",
+    "empty": "Your list is empty.",
+    "hint": "Add a show with the + button on any show page."
+  },
+  "nav": {
+    "name": "Navigation",
+    "genre": "Genres",
+    "home": "Home",
+    "list": "List",
+    "myList": "My List",
+    "search": "Search"
+  },
+  "search": {
+    "name": "Search",
+    "empty": "Nothing matches “{query}”",
+    "hint": "Check the spelling, or browse by genre instead.",
+    "placeholder": "Search shows by name",
+    "recent": "Recent searches",
+    "result": "{count} result for “{query}” | {count} results for “{query}”",
+    "top": "Top result",
+    "trending": "Trending now"
+  },
+  "show": {
+    "name": "Show | Shows",
+    "cast": "Cast & Crew",
+    "creator": "Creator | Creators",
+    "detail": "Details",
+    "extra": "Extras",
+    "language": "Language",
+    "network": "Network",
+    "original": "{network} original series",
+    "premiered": "Premiered",
+    "season": "Season {number}",
+    "seasonCount": "{count} season | {count} seasons",
+    "similar": "More Like This",
+    "starring": "Starring",
+    "status": "Status",
+    "unrated": "Not rated"
+  },
+  "sort": {
+    "name": "Sort",
+    "byName": "Title",
+    "byRating": "Rating",
+    "byRelevance": "Relevance",
+    "byYear": "Year (newest)",
+    "label": "Sort: {sort}"
+  },
+  "state": {
+    "name": "State",
+    "error": "Something went wrong",
+    "hint": "The catalogue could not be loaded.",
+    "loading": "Loading…",
+    "offline": "You are offline — showing what was already loaded."
+  }
+}

@@ -1,0 +1,22 @@
+type IconName =
+  | 'x'
+  | 'star'
+  | 'user'
+  | 'menu'
+  | 'play'
+  | 'plus'
+  | 'house'
+  | 'search'
+  | 'share'
+  | 'ellipsis'
+  | 'bookmark'
+  | 'download'
+  | 'arrowLeft'
+  | 'arrowRight'
+  | 'chevronDown'
+  | 'chevronLeft'
+  | 'chevronRight'
+  | 'sortDescending'
+  | 'slidersHorizontal'
+
+export type { IconName }
