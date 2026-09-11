@@ -4,7 +4,7 @@
     :type="selectable ? 'button' : undefined"
     :class="['episode', { 'episode--active': active }]"
     :data-test="`episode-card-${episode.number ?? 0}`"
-    @click="selectable && emit('on-select')"
+    @click="selectable && emits('on-select')"
   >
     <div class="episode__thumb">
       <poster-image
@@ -55,9 +55,7 @@ const props = withDefaults(
   }
 )
 
-const emit = defineEmits<{
-  'on-select': []
-}>()
+const emits = defineEmits<{ 'on-select': [] }>()
 
 const { t } = useLocale()
 

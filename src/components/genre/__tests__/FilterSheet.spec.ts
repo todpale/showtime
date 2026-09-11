@@ -1,38 +1,38 @@
-import type { Pinia } from 'pinia'
 import { createPinia } from 'pinia'
 import { apiGet } from '@/utils/api'
-import { ref, defineComponent } from 'vue'
 import { testPlugins } from '@/__tests__/setup.ts'
 import { useCatalogStore } from '@/stores/catalog'
+import { ref, type Ref, defineComponent } from 'vue'
 import FilterSheet from '@/components/genre/FilterSheet.vue'
 import { vi, it, expect, describe, afterEach, beforeEach } from 'vitest'
-import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
+import { mount, flushPromises, type VueWrapper, enableAutoUnmount } from '@vue/test-utils'
 
 vi.mock('@/utils/api', () => ({ apiGet: vi.fn(), toQuery: vi.fn(() => '') }))
 
 const apiGetMock = vi.mocked(apiGet)
 
-function seedCatalog(pinia: Pinia) {
-  const catalog = useCatalogStore(pinia)
+let wrapper: VueWrapper<any>
+let open: Ref<boolean>
+let onClose: ReturnType<typeof vi.fn>
+let catalog: ReturnType<typeof useCatalogStore>
 
+function seedCatalog() {
+  const pinia = createPinia()
+
+  catalog = useCatalogStore(pinia)
   catalog.genres = [
     { name: 'Drama', slug: 'drama', total: 120 },
     { name: 'Comedy', slug: 'comedy', total: 90 }
   ]
 
-  return catalog
+  return pinia
 }
 
-function mountSheet() {
-  const pinia = createPinia()
-  const catalog = seedCatalog(pinia)
-
-  const wrapper = mount(FilterSheet, {
+function mountWrapper() {
+  return mount(FilterSheet, {
     attachTo: document.body,
-    global: { plugins: testPlugins(pinia) }
+    global: { plugins: testPlugins(seedCatalog()) }
   })
-
-  return { catalog, wrapper }
 }
 
 function pressKey(key: string): void {
@@ -40,12 +40,10 @@ function pressKey(key: string): void {
 }
 
 function mountHost() {
-  const pinia = createPinia()
+  const pinia = seedCatalog()
 
-  seedCatalog(pinia)
-
-  const open = ref(true)
-  const onClose = vi.fn()
+  open = ref(true)
+  onClose = vi.fn()
 
   const host = defineComponent({
     name: 'SheetHost',
@@ -54,40 +52,33 @@ function mountHost() {
     template: '<filter-sheet v-if="open" @on-close="onClose" />'
   })
 
-  const wrapper = mount(host, { attachTo: document.body, global: { plugins: testPlugins(pinia) } })
-
-  return { open, onClose, wrapper }
+  return mount(host, { attachTo: document.body, global: { plugins: testPlugins(pinia) } })
 }
+
+beforeEach(() => {
+  apiGetMock.mockReset()
+  apiGetMock.mockResolvedValue({ rows: [], spotlight: null })
+  wrapper = mountWrapper()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 enableAutoUnmount(afterEach)
 
 describe('FilterSheet', () => {
-  beforeEach(() => {
-    apiGetMock.mockReset()
-    apiGetMock.mockResolvedValue({ rows: [], spotlight: null })
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
   it('lists an "all" chip alongside the known genres', () => {
-    const { wrapper } = mountSheet()
-
     expect(wrapper.get('[data-test="filter-chip-all"]').text()).toBe('All')
     expect(wrapper.get('[data-test="filter-chip-drama"]').text()).toBe('Drama')
     expect(wrapper.get('[data-test="filter-chip-comedy"]').text()).toBe('Comedy')
   })
 
   it('marks "all" as active while no genre is chosen', () => {
-    const { wrapper } = mountSheet()
-
     expect(wrapper.get('[data-test="filter-chip-all"]').attributes('aria-pressed')).toBe('true')
   })
 
   it('narrows the catalogue to the genre that was picked', async () => {
-    const { wrapper, catalog } = mountSheet()
-
     await wrapper.get('[data-test="filter-chip-comedy"]').trigger('click')
     await flushPromises()
 
@@ -96,8 +87,6 @@ describe('FilterSheet', () => {
   })
 
   it('goes back to every genre when "all" is picked', async () => {
-    const { wrapper, catalog } = mountSheet()
-
     await wrapper.get('[data-test="filter-chip-drama"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-test="filter-chip-all"]').trigger('click')
@@ -107,8 +96,6 @@ describe('FilterSheet', () => {
   })
 
   it('applies a minimum rating', async () => {
-    const { wrapper, catalog } = mountSheet()
-
     await wrapper.get('[data-test="filter-rating-8"]').trigger('click')
     await flushPromises()
 
@@ -116,8 +103,6 @@ describe('FilterSheet', () => {
   })
 
   it('resets the rating but keeps the genre', async () => {
-    const { wrapper, catalog } = mountSheet()
-
     await wrapper.get('[data-test="filter-chip-drama"]').trigger('click')
     await wrapper.get('[data-test="filter-rating-9"]').trigger('click')
     await flushPromises()
@@ -128,8 +113,6 @@ describe('FilterSheet', () => {
   })
 
   it('asks the page to close from the close button and from the backdrop', async () => {
-    const { wrapper } = mountSheet()
-
     await wrapper.get('[data-test="filter-close-btn"]').trigger('click')
     await wrapper.get('[data-test="filter-sheet-scrim-btn"]').trigger('click')
 
@@ -137,8 +120,6 @@ describe('FilterSheet', () => {
   })
 
   it('names both dismiss controls "Close" rather than "Clear"', () => {
-    const { wrapper } = mountSheet()
-
     const scrim = wrapper.get('[data-test="filter-sheet-scrim-btn"]')
     const close = wrapper.get('[data-test="filter-close-btn"]')
 
@@ -149,8 +130,6 @@ describe('FilterSheet', () => {
   })
 
   it('keeps the dismiss controls distinguishable from the reset control', () => {
-    const { wrapper } = mountSheet()
-
     const reset = wrapper.get('[data-test="filter-reset-btn"]')
     const close = wrapper.get('[data-test="filter-close-btn"]')
 
@@ -159,16 +138,11 @@ describe('FilterSheet', () => {
   })
 
   it('asks the page to close when Escape is pressed', () => {
-    const { wrapper } = mountSheet()
-
     pressKey('Escape')
-
     expect(wrapper.emitted('on-close')).toHaveLength(1)
   })
 
   it('stays open on any other key', () => {
-    const { wrapper } = mountSheet()
-
     pressKey('Enter')
     pressKey('Tab')
     pressKey('a')
@@ -177,7 +151,7 @@ describe('FilterSheet', () => {
   })
 
   it('stops listening for Escape once it is gone', async () => {
-    const { open, onClose, wrapper } = mountHost()
+    wrapper = mountHost()
 
     pressKey('Escape')
 
@@ -197,7 +171,7 @@ describe('FilterSheet', () => {
     const added = vi.spyOn(window, 'addEventListener')
     const removed = vi.spyOn(window, 'removeEventListener')
 
-    const { wrapper } = mountSheet()
+    wrapper = mountWrapper()
 
     const registrations = added.mock.calls.filter(([type]) => type === 'keydown')
 
@@ -212,16 +186,11 @@ describe('FilterSheet', () => {
   })
 
   it('moves the focus onto the close button so the keyboard starts inside the sheet', async () => {
-    const { wrapper } = mountSheet()
-
     await wrapper.vm.$nextTick()
-
     expect(document.activeElement).toBe(wrapper.get('[data-test="filter-close-btn"]').element)
   })
 
   it('announces the panel as a modal dialog named after the filters', () => {
-    const { wrapper } = mountSheet()
-
     const panel = wrapper.get('[role="dialog"]')
 
     expect(panel.attributes('aria-modal')).toBe('true')

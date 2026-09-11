@@ -18,7 +18,7 @@
         class="hero__circle"
         type="button"
         data-test="detail-back-btn"
-        @click="emit('on-back')"
+        @click="emits('on-back')"
       >
         <app-icon
           :size="18"
@@ -32,7 +32,7 @@
           class="hero__circle"
           type="button"
           data-test="detail-share-btn"
-          @click="share"
+          @click="handleShare"
         >
           <app-icon
             :size="18"
@@ -63,9 +63,8 @@
         <h1
           class="hero__title u-display"
           data-test="detail-title"
-        >
-          {{ show.name }}
-        </h1>
+          v-text="show.name"
+        />
 
         <div class="hero__meta">
           <rating-pill
@@ -114,7 +113,7 @@
             :class="['hero__list', { 'hero__list--active': saved }]"
             type="button"
             data-test="detail-add-btn"
-            @click="emit('on-save')"
+            @click="emits('on-save')"
           >
             <app-icon
               :size="16"
@@ -141,8 +140,11 @@ import PosterImage from '@/components/ui/PosterImage.vue'
 
 defineOptions({ name: 'ShowHero' })
 
-const props = defineProps<{ saved: boolean, show: ShowDetail }>()
-const emit = defineEmits<{
+const props = defineProps<{
+  saved: boolean
+  show: ShowDetail
+}>()
+const emits = defineEmits<{
   'on-save': [],
   'on-back': [],
   'on-share': []
@@ -153,9 +155,9 @@ const desktop = useDesktop()
 
 const art = computed((): string | null => props.show.backdrop ?? props.show.posterLarge)
 
-const eyebrow = computed((): string => (props.show.network
-  ? t('show.original', { network: props.show.network })
-  : ''))
+const eyebrow = computed((): string => {
+  return props.show.network ? t('show.original', { network: props.show.network }) : ''
+})
 
 const starring = computed((): string => props.show.cast.slice(0, 3).map((member) => member.person).join(', '))
 
@@ -167,7 +169,7 @@ const meta = computed((): string => joinMeta([
   props.show.genres.join(', ')
 ]))
 
-async function share(): Promise<void> {
+async function handleShare(): Promise<void> {
   const payload: ShareData = {
     title: props.show.name,
     url: window.location.href,
@@ -175,8 +177,7 @@ async function share(): Promise<void> {
   }
 
   if (typeof navigator.share !== 'function') {
-    emit('on-share')
-
+    emits('on-share')
     return
   }
 
@@ -187,7 +188,7 @@ async function share(): Promise<void> {
       return
     }
 
-    emit('on-share')
+    emits('on-share')
   }
 }
 </script>

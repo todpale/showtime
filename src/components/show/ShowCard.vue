@@ -43,7 +43,10 @@ import PosterImage from '@/components/ui/PosterImage.vue'
 
 defineOptions({ name: 'ShowCard' })
 
-const props = withDefaults(defineProps<{ genre?: string, show: ShowSummary }>(), { genre: '' })
+const props = withDefaults(defineProps<{
+  genre?: string
+  show: ShowSummary
+}>(), { genre: '' })
 
 const meta = computed((): string => {
   const genre = props.genre || props.show.genres[0] || props.show.type

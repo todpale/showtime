@@ -1,12 +1,14 @@
+import type { Pinia } from 'pinia'
 import { createPinia } from 'pinia'
 import { apiGet } from '@/utils/api'
+import type { Router } from 'vue-router'
 import type { GenrePage } from '@/models'
 import GenreView from '@/views/GenreView.vue'
 import { useGenreStore } from '@/stores/genre'
 import { makeShow } from '@/__tests__/fixtures'
-import { mount, flushPromises } from '@vue/test-utils'
 import { vi, it, expect, describe, beforeEach } from 'vitest'
 import { testPlugins, createTestRouter } from '@/__tests__/setup.ts'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 
 vi.mock('@/utils/api', () => ({ apiGet: vi.fn(), toQuery: vi.fn(() => '') }))
 
@@ -24,18 +26,22 @@ function makePage(overrides: Partial<GenrePage> = {}): GenrePage {
   }
 }
 
-async function mountView(slug = 'drama') {
-  const pinia = createPinia()
-  const router = createTestRouter()
+let pinia: Pinia
+let router: Router
+let wrapper: VueWrapper<any>
+
+async function mountWrapper(slug = 'drama') {
+  pinia = createPinia()
+  router = createTestRouter()
 
   await router.push(`/genres/${slug}`)
   await router.isReady()
 
-  const wrapper = mount(GenreView, { global: { plugins: testPlugins(pinia, router) } })
+  const view = mount(GenreView, { global: { plugins: testPlugins(pinia, router) } })
 
   await flushPromises()
 
-  return { pinia, router, wrapper }
+  return view
 }
 
 function lastParams(): Record<string, unknown> {
@@ -51,39 +57,39 @@ describe('GenreView', () => {
   })
 
   it('opens the genre named in the url', async () => {
-    await mountView('drama')
+    wrapper = await mountWrapper('drama')
 
     expect(apiGetMock).toHaveBeenCalledWith('/genres/drama', expect.objectContaining({ offset: 0 }))
   })
 
   it('shows the genre name and how it is sorted', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="genre-title"]').text()).toBe('Drama')
     expect(wrapper.get('[data-test="genre-subtitle"]').text()).toBe('2 shows · sorted by rating')
   })
 
   it('counts how much of the genre is on screen', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="genre-showing"]').text()).toBe('Showing 2 of 2')
   })
 
   it('leads back to the genre index', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="genre-breadcrumb"]').attributes('href')).toBe('/genres')
   })
 
   it('shows a card for every show in the genre', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="genre-grid"]').text()).toContain('Under the Dome')
     expect(wrapper.find('[data-test="show-card-2"]').exists()).toBe(true)
   })
 
   it('re-sorts the genre on request', async () => {
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="sort-control"]').trigger('click')
     await wrapper.get('[data-test="sort-option-name"]').trigger('click')
@@ -94,7 +100,7 @@ describe('GenreView', () => {
   })
 
   it('filters by a minimum rating and lifts the filter when the chip is pressed again', async () => {
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-rating-8"]').trigger('click')
     await flushPromises()
@@ -108,7 +114,7 @@ describe('GenreView', () => {
   })
 
   it('filters by year', async () => {
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-year-2013"]').trigger('click')
     await flushPromises()
@@ -118,7 +124,7 @@ describe('GenreView', () => {
   })
 
   it('offers one chip per year the genre reports, in the order it reports them', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     const years = wrapper.findAll('[data-test^="filter-chip-year-"]')
 
@@ -126,7 +132,7 @@ describe('GenreView', () => {
   })
 
   it('marks the chip of the active year as pressed', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-year-2011"]').trigger('click')
     await flushPromises()
@@ -136,7 +142,7 @@ describe('GenreView', () => {
   })
 
   it('lifts the year filter when the active chip is pressed again', async () => {
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-year-2011"]').trigger('click')
     await flushPromises()
@@ -151,7 +157,7 @@ describe('GenreView', () => {
   })
 
   it('switches straight from one year to another', async () => {
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-year-2013"]').trigger('click')
     await flushPromises()
@@ -167,7 +173,7 @@ describe('GenreView', () => {
     apiGetMock.mockResolvedValueOnce(makePage())
     apiGetMock.mockResolvedValueOnce(makePage({ years: [2013, 2012] }))
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-rating-8"]').trigger('click')
     await flushPromises()
@@ -180,7 +186,7 @@ describe('GenreView', () => {
   it('renders no year chips when the genre reports no years', async () => {
     apiGetMock.mockResolvedValue(makePage({ years: [] }))
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.findAll('[data-test^="filter-chip-year-"]')).toEqual([])
     expect(wrapper.findAll('[data-test^="filter-chip-rating-"]')).toHaveLength(3)
@@ -191,7 +197,7 @@ describe('GenreView', () => {
     apiGetMock.mockResolvedValueOnce(makePage({ matched: 3 }))
     apiGetMock.mockResolvedValueOnce(makePage({ matched: 3, shows: [makeShow({ id: 3, name: 'Fringe' })] }))
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
     await flushPromises()
@@ -201,7 +207,7 @@ describe('GenreView', () => {
   })
 
   it('offers no load more button once everything is shown', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.find('[data-test="genre-load-more-btn"]').exists()).toBe(false)
   })
@@ -210,7 +216,7 @@ describe('GenreView', () => {
     apiGetMock.mockResolvedValueOnce(makePage())
     apiGetMock.mockResolvedValueOnce(makePage({ matched: 0, shows: [] }))
 
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="filter-chip-rating-9"]').trigger('click')
     await flushPromises()
@@ -229,7 +235,7 @@ describe('GenreView', () => {
   it('reports a failure and offers to try again', async () => {
     apiGetMock.mockRejectedValueOnce(new Error('Unknown genre "nope"'))
 
-    const { wrapper } = await mountView('nope')
+    wrapper = await mountWrapper('nope')
 
     expect(wrapper.get('[data-test="genre-error"]').text()).toContain('Unknown genre "nope"')
 
@@ -240,7 +246,7 @@ describe('GenreView', () => {
   })
 
   it('opens the new genre when the url changes', async () => {
-    const { wrapper, router } = await mountView('drama')
+    wrapper = await mountWrapper('drama')
 
     apiGetMock.mockResolvedValue(makePage({ name: 'Comedy', slug: 'comedy' }))
     await router.push('/genres/comedy')
@@ -268,17 +274,17 @@ describe('GenreView load more failures', () => {
   async function mountPaged() {
     apiGetMock.mockResolvedValueOnce(makePage({ matched: 3 }))
 
-    return await mountView()
+    return await mountWrapper()
   }
 
-  function cardIds(wrapper: Awaited<ReturnType<typeof mountView>>['wrapper']): string[] {
+  function cardIds(): string[] {
     return wrapper.get('[data-test="genre-grid"]')
       .findAll('a[data-test^="show-card-"]')
       .map((card) => card.attributes('data-test') ?? '')
   }
 
   it('offers a load more button while the genre has unseen shows', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     expect(wrapper.get('[data-test="genre-load-more-btn"]').text()).toBe('Load more')
     expect(wrapper.get('[data-test="genre-load-more-btn"]').attributes('disabled')).toBeUndefined()
@@ -286,21 +292,21 @@ describe('GenreView load more failures', () => {
   })
 
   it('keeps the loaded grid on screen when the next page fails', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
-    expect(cardIds(wrapper)).toEqual(['show-card-1', 'show-card-2'])
+    expect(cardIds()).toEqual(['show-card-1', 'show-card-2'])
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.find('[data-test="genre-grid"]').exists()).toBe(true)
-    expect(cardIds(wrapper)).toEqual(['show-card-1', 'show-card-2'])
+    expect(cardIds()).toEqual(['show-card-1', 'show-card-2'])
     expect(wrapper.get('[data-test="genre-grid"]').text()).toContain('Under the Dome')
   })
 
   it('never replaces the grid with the full page error when the next page fails', async () => {
-    const { wrapper, pinia } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -313,7 +319,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('reports the failure inline underneath the grid', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -326,7 +332,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('falls back to a generic message when the failure carries no text', async () => {
-    const { wrapper, pinia } = await mountPaged()
+    wrapper = await mountPaged()
     const store = useGenreStore(pinia)
 
     store.moreError = null
@@ -338,7 +344,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('keeps counting only the shows that are really on screen after a failure', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -349,7 +355,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('retries the next page and clears the failure once it succeeds', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -360,13 +366,13 @@ describe('GenreView load more failures', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-test="genre-load-more-error"]').exists()).toBe(false)
-    expect(cardIds(wrapper)).toEqual(['show-card-1', 'show-card-2', 'show-card-3'])
+    expect(cardIds()).toEqual(['show-card-1', 'show-card-2', 'show-card-3'])
     expect(wrapper.get('[data-test="genre-grid"]').text()).toContain('Fringe')
     expect(wrapper.find('[data-test="genre-load-more-btn"]').exists()).toBe(false)
   })
 
   it('asks for the next page again when the retry button is pressed', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -383,7 +389,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('keeps the failure on screen when the retry fails as well', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -394,12 +400,12 @@ describe('GenreView load more failures', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-test="genre-load-more-error"]').text()).toContain('Still broken')
-    expect(cardIds(wrapper)).toEqual(['show-card-1', 'show-card-2'])
+    expect(cardIds()).toEqual(['show-card-1', 'show-card-2'])
   })
 
   it('disables and relabels the load more button while the next page is in flight', async () => {
     const gate = defer<GenrePage>()
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockReturnValueOnce(gate.promise)
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -419,7 +425,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('drops the inline failure when the genre is reloaded from the controls', async () => {
-    const { wrapper } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')
@@ -435,7 +441,7 @@ describe('GenreView load more failures', () => {
   })
 
   it('drops the inline failure when another genre is opened', async () => {
-    const { wrapper, router } = await mountPaged()
+    wrapper = await mountPaged()
 
     apiGetMock.mockRejectedValueOnce(new Error('Next page exploded'))
     await wrapper.get('[data-test="genre-load-more-btn"]').trigger('click')

@@ -8,7 +8,7 @@
       class="modal__scrim"
       type="button"
       data-test="episode-modal-scrim-btn"
-      @click="emit('on-close')"
+      @click="emits('on-close')"
     />
 
     <div
@@ -32,7 +32,7 @@
           class="modal__close"
           type="button"
           data-test="episode-modal-close-btn"
-          @click="emit('on-close')"
+          @click="emits('on-close')"
         >
           <app-icon
             :size="16"
@@ -98,19 +98,16 @@ import type { Episode } from '@/models'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { joinMeta, ratingText } from '@/utils/format'
 import PosterImage from '@/components/ui/PosterImage.vue'
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
 
 defineOptions({ name: 'EpisodeModal' })
 
 const props = defineProps<{ episode: Episode }>()
-
-const emit = defineEmits<{
-  'on-close': []
-}>()
+const emits = defineEmits<{ 'on-close': [] }>()
 
 const { t } = useLocale()
 
-const closeButton = ref<HTMLButtonElement | null>(null)
+const closeButton = useTemplateRef<HTMLButtonElement>('closeButton')
 
 const code = computed((): string => joinMeta([
   t('episode.code', { season: props.episode.season, number: props.episode.number ?? 1 }),
@@ -119,7 +116,7 @@ const code = computed((): string => joinMeta([
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape') {
-    emit('on-close')
+    emits('on-close')
   }
 }
 

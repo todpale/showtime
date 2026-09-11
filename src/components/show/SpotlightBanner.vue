@@ -51,17 +51,17 @@
         </router-link>
 
         <button
-          :class="['spotlight__list', { 'spotlight__list--active': saved }]"
+          :class="['spotlight__list', { 'spotlight__list--active': isSaved }]"
           type="button"
           data-test="spotlight-list-btn"
-          @click="list.toggle(show)"
+          @click="store.toggle(show)"
         >
           <app-icon
             :size="16"
             name="plus"
           />
 
-          <span v-text="saved ? t('action.inList') : t('action.add')" />
+          <span v-text="isSaved ? t('action.inList') : t('action.add')" />
         </button>
       </div>
     </div>
@@ -83,14 +83,16 @@ defineOptions({ name: 'SpotlightBanner' })
 const props = defineProps<{ show: ShowSummary }>()
 
 const { t } = useLocale()
-const list = useListStore()
+const store = useListStore()
 
 const art = computed((): string | null => props.show.backdrop ?? props.show.posterLarge)
-const saved = computed((): boolean => list.has(props.show.id))
+const isSaved = computed((): boolean => store.has(props.show.id))
 
-const eyebrow = computed((): string => (props.show.network
-  ? t('show.original', { network: props.show.network })
-  : t('home.featured')))
+const eyebrow = computed((): string => {
+  return props.show.network
+    ? t('show.original', { network: props.show.network })
+    : t('home.featured')
+})
 
 const meta = computed((): string => joinMeta([
   props.show.year === null ? null : String(props.show.year),

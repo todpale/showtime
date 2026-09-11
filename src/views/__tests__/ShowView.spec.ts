@@ -1,10 +1,12 @@
+import type { Pinia } from 'pinia'
 import { createPinia } from 'pinia'
 import { apiGet } from '@/utils/api'
+import type { Router } from 'vue-router'
 import ShowView from '@/views/ShowView.vue'
 import { useListStore } from '@/stores/list'
 import type { DOMWrapper } from '@vue/test-utils'
-import { mount, flushPromises } from '@vue/test-utils'
 import type { ShowFact, GenrePage, ShowDetail } from '@/models'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { vi, it, expect, describe, afterEach, beforeEach } from 'vitest'
 import { makeShow, makeGroup, makeDetail, makeEpisode } from '@/__tests__/fixtures'
 import { testPlugins, stubMatchMedia, createTestRouter } from '@/__tests__/setup.ts'
@@ -13,7 +15,7 @@ vi.mock('@/utils/api', () => ({ apiGet: vi.fn(), toQuery: vi.fn(() => '') }))
 
 const apiGetMock = vi.mocked(apiGet)
 
-const GROUPS = [
+const testGroups = [
   makeGroup(1, [
     makeEpisode({ id: 10, number: 1, name: 'Pilot' }),
     makeEpisode({ id: 11, number: 2, name: 'The Fire' })
@@ -21,7 +23,7 @@ const GROUPS = [
   makeGroup(2, [makeEpisode({ id: 20, season: 2, number: 1, name: 'Heads Will Roll' })])
 ]
 
-const SIMILAR: GenrePage = {
+const testSimilar: GenrePage = {
   name: 'Drama',
   slug: 'drama',
   total: 2,
@@ -33,29 +35,33 @@ const SIMILAR: GenrePage = {
 function serve(detail: ShowDetail | Error = makeDetail({ id: 1 })): void {
   apiGetMock.mockImplementation((path: string) => {
     if (path.endsWith('/episodes')) {
-      return Promise.resolve(GROUPS)
+      return Promise.resolve(testGroups)
     }
 
     if (path.startsWith('/genres/')) {
-      return Promise.resolve(SIMILAR)
+      return Promise.resolve(testSimilar)
     }
 
     return detail instanceof Error ? Promise.reject(detail) : Promise.resolve(detail)
   })
 }
 
-async function mountView(id = 1) {
-  const pinia = createPinia()
-  const router = createTestRouter()
+let pinia: Pinia
+let router: Router
+let wrapper: VueWrapper<any>
+
+async function mountWrapper(id = 1) {
+  pinia = createPinia()
+  router = createTestRouter()
 
   await router.push(`/shows/${id}`)
   await router.isReady()
 
-  const wrapper = mount(ShowView, { global: { plugins: testPlugins(pinia, router) } })
+  const view = mount(ShowView, { global: { plugins: testPlugins(pinia, router) } })
 
   await flushPromises()
 
-  return { pinia, router, wrapper }
+  return view
 }
 
 function readFacts(rows: DOMWrapper<Element>[]): ShowFact[] {
@@ -68,34 +74,34 @@ function readFacts(rows: DOMWrapper<Element>[]): ShowFact[] {
 async function factsOf(detail: ShowDetail): Promise<ShowFact[]> {
   serve(detail)
 
-  const { wrapper } = await mountView()
+  wrapper = await mountWrapper()
 
   await wrapper.get('[data-test="detail-tab-details"]').trigger('click')
 
   return readFacts(wrapper.findAll('[data-test="detail-fact"]'))
 }
 
+beforeEach(() => {
+  apiGetMock.mockReset()
+  window.localStorage.clear()
+  stubMatchMedia(false)
+  serve()
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe('ShowView', () => {
-  beforeEach(() => {
-    apiGetMock.mockReset()
-    window.localStorage.clear()
-    stubMatchMedia(false)
-    serve()
-  })
-
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('loads the show named in the url', async () => {
-    await mountView(42)
+    wrapper = await mountWrapper(42)
 
     expect(apiGetMock).toHaveBeenCalledWith('/shows/42')
     expect(apiGetMock).toHaveBeenCalledWith('/shows/42/episodes')
   })
 
   it('shows the hero of the show', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="detail-title"]').text()).toBe('Under the Dome')
     expect(wrapper.get('[data-test="detail-summary"]').text()).toContain('sealed off by a dome')
@@ -104,7 +110,7 @@ describe('ShowView', () => {
   it('reports a failure and offers to try again', async () => {
     serve(new Error('No such show'))
 
-    const { wrapper } = await mountView(999)
+    wrapper = await mountWrapper(999)
 
     expect(wrapper.get('[data-test="show-error"]').text()).toContain('No such show')
 
@@ -116,14 +122,14 @@ describe('ShowView', () => {
   })
 
   it('opens on the episodes of the first season', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="detail-episodes"]').text()).toContain('Pilot')
     expect(wrapper.get('[data-test="detail-episode-count"]').text()).toBe('2 episodes')
   })
 
   it('switches to another season', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-season-select"]').setValue('2')
 
@@ -132,13 +138,13 @@ describe('ShowView', () => {
   })
 
   it('keeps the episode modal closed until an episode is picked', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.find('[data-test="episode-modal"]').exists()).toBe(false)
   })
 
   it('opens an episode in a modal and closes it again', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="episode-card-2"]').trigger('click')
 
@@ -153,7 +159,7 @@ describe('ShowView', () => {
   })
 
   it('closes the episode modal from the scrim behind it', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="episode-card-1"]').trigger('click')
 
@@ -165,7 +171,7 @@ describe('ShowView', () => {
   })
 
   it('adds the show to my list and takes it out again', async () => {
-    const { wrapper, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-add-btn"]').trigger('click')
 
@@ -177,7 +183,7 @@ describe('ShowView', () => {
   })
 
   it('shows the facts of the show under the details tab', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-tab-details"]').trigger('click')
 
@@ -190,7 +196,7 @@ describe('ShowView', () => {
   })
 
   it('names every fact under the details tab', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-tab-details"]').trigger('click')
 
@@ -234,7 +240,7 @@ describe('ShowView', () => {
   it('lists the cast under the cast tab', async () => {
     serve(makeDetail({ id: 1, cast: [{ id: 3, person: 'Mike Vogel', character: 'Dale Barbara', image: null }] }))
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-tab-cast"]').trigger('click')
 
@@ -243,7 +249,7 @@ describe('ShowView', () => {
   })
 
   it('suggests other shows of the same genre, never the show itself', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-tab-similar"]').trigger('click')
 
@@ -255,7 +261,7 @@ describe('ShowView', () => {
   it('says when there is nothing similar to suggest', async () => {
     serve(makeDetail({ id: 1, genres: [] }))
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-tab-similar"]').trigger('click')
 
@@ -269,31 +275,31 @@ describe('ShowView', () => {
       }
 
       if (path.startsWith('/genres/')) {
-        return Promise.resolve(SIMILAR)
+        return Promise.resolve(testSimilar)
       }
 
       return Promise.resolve(makeDetail({ id: 1 }))
     })
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.get('[data-test="detail-episodes-empty"]').text()).toContain('No episodes are listed')
   })
 
   it('repeats the synopsis under the hero on a phone only', async () => {
-    const phone = await mountView()
+    wrapper = await mountWrapper()
 
-    expect(phone.wrapper.get('[data-test="detail-synopsis"]').text()).toContain('sealed off by a dome')
+    expect(wrapper.get('[data-test="detail-synopsis"]').text()).toContain('sealed off by a dome')
 
     stubMatchMedia(true)
 
-    const desktop = await mountView()
+    wrapper = await mountWrapper()
 
-    expect(desktop.wrapper.find('[data-test="detail-synopsis"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="detail-synopsis"]').exists()).toBe(false)
   })
 
   it('goes home from the back button when there is nowhere to go back to', async () => {
-    const { wrapper, router } = await mountView()
+    wrapper = await mountWrapper()
     const push = vi.spyOn(router, 'push')
 
     window.history.replaceState(null, '')
@@ -303,7 +309,7 @@ describe('ShowView', () => {
   })
 
   it('returns to the previous page from the back button', async () => {
-    const { wrapper, router } = await mountView()
+    wrapper = await mountWrapper()
     const back = vi.spyOn(router, 'back')
 
     window.history.replaceState({ back: '/' }, '')
@@ -319,7 +325,7 @@ describe('ShowView', () => {
 
     vi.stubGlobal('navigator', { clipboard: { writeText } })
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="detail-share-btn"]').trigger('click')
 
@@ -327,7 +333,7 @@ describe('ShowView', () => {
   })
 
   it('loads the new show when the url changes', async () => {
-    const { wrapper, router } = await mountView(1)
+    wrapper = await mountWrapper(1)
 
     serve(makeDetail({ id: 2, name: 'Person of Interest' }))
     await router.push('/shows/2')

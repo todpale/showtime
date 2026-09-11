@@ -4,29 +4,31 @@ import type { HomeFeed } from '@/models'
 import HomeView from '@/views/HomeView.vue'
 import { makeShow } from '@/__tests__/fixtures'
 import { useCatalogStore } from '@/stores/catalog'
-import { mount, flushPromises } from '@vue/test-utils'
 import { testPlugins, stubMatchMedia } from '@/__tests__/setup.ts'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { vi, it, expect, describe, afterEach, beforeEach } from 'vitest'
 
 vi.mock('@/utils/api', () => ({ apiGet: vi.fn(), toQuery: vi.fn(() => '') }))
 
 const apiGetMock = vi.mocked(apiGet)
 
-const GENRES = [
+const testGenres = [
   { name: 'Drama', slug: 'drama', total: 120 },
   { name: 'Comedy', slug: 'comedy', total: 90 }
 ]
 
-const FEED: HomeFeed = {
+const testFeed: HomeFeed = {
   rows: [{ name: 'Drama', slug: 'drama', total: 120, shows: [makeShow({ id: 1, name: 'Under the Dome' })] }],
   spotlight: makeShow({ id: 2, name: 'Lost' })
 }
 
-function serve(feed: HomeFeed = FEED): void {
-  apiGetMock.mockImplementation((path: string) => Promise.resolve(path === '/genres' ? GENRES : feed))
+function serve(feed: HomeFeed = testFeed): void {
+  apiGetMock.mockImplementation((path: string) => Promise.resolve(path === '/genres' ? testGenres : feed))
 }
 
-function mountView(pinia = createPinia()) {
+let wrapper: VueWrapper<any>
+
+function mountWrapper(pinia = createPinia()) {
   return mount(HomeView, { global: { plugins: testPlugins(pinia) } })
 }
 
@@ -44,7 +46,7 @@ describe('HomeView', () => {
   it('loads the catalogue when it opens', async () => {
     serve()
 
-    mountView()
+    wrapper = mountWrapper()
     await flushPromises()
 
     expect(apiGetMock).toHaveBeenCalledWith('/home', expect.objectContaining({ genre: null }))
@@ -53,7 +55,7 @@ describe('HomeView', () => {
   it('shows placeholders while the catalogue loads', async () => {
     serve()
 
-    const wrapper = mountView()
+    wrapper = mountWrapper()
 
     await wrapper.vm.$nextTick()
 
@@ -67,7 +69,7 @@ describe('HomeView', () => {
   it('shows a row for every genre in the feed', async () => {
     serve()
 
-    const wrapper = mountView()
+    wrapper = mountWrapper()
 
     await flushPromises()
 
@@ -77,7 +79,7 @@ describe('HomeView', () => {
   it('says the catalogue is empty when the feed has no rows', async () => {
     serve({ rows: [], spotlight: null })
 
-    const wrapper = mountView()
+    wrapper = mountWrapper()
 
     await flushPromises()
 
@@ -87,7 +89,7 @@ describe('HomeView', () => {
   it('reports a failure and offers to try again', async () => {
     apiGetMock.mockRejectedValue(new Error('TVmaze is unreachable'))
 
-    const wrapper = mountView()
+    wrapper = mountWrapper()
 
     await flushPromises()
 
@@ -105,7 +107,8 @@ describe('HomeView', () => {
     serve()
 
     const pinia = createPinia()
-    const wrapper = mountView(pinia)
+
+    wrapper = mountWrapper(pinia)
 
     await flushPromises()
 
@@ -122,7 +125,8 @@ describe('HomeView', () => {
     serve()
 
     const pinia = createPinia()
-    const wrapper = mountView(pinia)
+
+    wrapper = mountWrapper(pinia)
 
     await flushPromises()
 
@@ -139,7 +143,8 @@ describe('HomeView', () => {
     serve()
 
     const pinia = createPinia()
-    const wrapper = mountView(pinia)
+
+    wrapper = mountWrapper(pinia)
 
     await flushPromises()
 
@@ -156,7 +161,7 @@ describe('HomeView', () => {
     serve()
     stubMatchMedia(true)
 
-    const wrapper = mountView()
+    wrapper = mountWrapper()
 
     await flushPromises()
 

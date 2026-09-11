@@ -1,19 +1,22 @@
-import type { Pinia } from 'pinia'
 import { createPinia } from 'pinia'
 import { apiGet } from '@/utils/api'
 import { makeShow } from '@/__tests__/fixtures'
 import { useSearchStore } from '@/stores/search'
 import { testPlugins } from '@/__tests__/setup.ts'
 import { useCatalogStore } from '@/stores/catalog'
-import { mount, flushPromises } from '@vue/test-utils'
 import { vi, it, expect, describe, beforeEach } from 'vitest'
 import SearchSidebar from '@/components/search/SearchSidebar.vue'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 
 vi.mock('@/utils/api', () => ({ apiGet: vi.fn(), toQuery: vi.fn(() => '') }))
 
 const apiGetMock = vi.mocked(apiGet)
 
-function seed(pinia: Pinia) {
+let wrapper: VueWrapper<any>
+let search: ReturnType<typeof useSearchStore>
+
+function mountWrapper() {
+  const pinia = createPinia()
   const catalog = useCatalogStore(pinia)
 
   catalog.genres = [
@@ -27,14 +30,9 @@ function seed(pinia: Pinia) {
     shows: [makeShow({ id: 1, name: 'Under the Dome', rating: 6.5 }), makeShow({ id: 2, name: 'Lost' })]
   }]
 
-  return { catalog, search: useSearchStore(pinia) }
-}
+  search = useSearchStore(pinia)
 
-function mountSidebar() {
-  const pinia = createPinia()
-  const stores = seed(pinia)
-
-  return { ...stores, wrapper: mount(SearchSidebar, { global: { plugins: testPlugins(pinia) } }) }
+  return mount(SearchSidebar, { global: { plugins: testPlugins(pinia) } })
 }
 
 describe('SearchSidebar', () => {
@@ -42,18 +40,16 @@ describe('SearchSidebar', () => {
     apiGetMock.mockReset()
     apiGetMock.mockResolvedValue({ query: '', total: 0, results: [] })
     window.localStorage.clear()
+
+    wrapper = mountWrapper()
   })
 
   it('offers the known genres as filter chips', () => {
-    const { wrapper } = mountSidebar()
-
     expect(wrapper.get('[data-test="filter-chip-drama"]').text()).toBe('Drama')
     expect(wrapper.get('[data-test="filter-chip-comedy"]').text()).toBe('Comedy')
   })
 
   it('filters the search by the genre that was picked, and lifts it when picked again', async () => {
-    const { wrapper, search } = mountSidebar()
-
     await wrapper.get('[data-test="filter-chip-drama"]').trigger('click')
     await flushPromises()
 
@@ -66,8 +62,6 @@ describe('SearchSidebar', () => {
   })
 
   it('applies a minimum rating to the search', async () => {
-    const { wrapper, search } = mountSidebar()
-
     await wrapper.get('[data-test="filter-rating-7"]').trigger('click')
     await flushPromises()
 
@@ -75,7 +69,6 @@ describe('SearchSidebar', () => {
   })
 
   it('lists the trending shows of the first catalogue row', () => {
-    const { wrapper } = mountSidebar()
     const trending = wrapper.get('[data-test="search-trending"]')
 
     expect(trending.text()).toContain('01')
@@ -85,8 +78,6 @@ describe('SearchSidebar', () => {
   })
 
   it('shows the recent searches and passes a pick up to the page', async () => {
-    const { wrapper, search } = mountSidebar()
-
     search.recent = ['dome']
     await wrapper.vm.$nextTick()
     await wrapper.get('[data-test="recent-search-pill-0"]').get('.recent__label').trigger('click')
@@ -95,8 +86,6 @@ describe('SearchSidebar', () => {
   })
 
   it('forgets a recent search on request', async () => {
-    const { wrapper, search } = mountSidebar()
-
     search.recent = ['dome', 'lost']
     await wrapper.vm.$nextTick()
     await wrapper.get('[data-test="recent-search-remove-0"]').trigger('click')

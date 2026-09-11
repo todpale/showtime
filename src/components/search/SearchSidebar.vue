@@ -5,7 +5,7 @@
   >
     <recent-searches
       :items="search.recent"
-      @on-pick="emit('on-pick', $event)"
+      @on-pick="emits('on-pick', $event)"
       @on-remove="search.forgetQuery"
       @on-clear="search.clearRecent"
     />
@@ -30,7 +30,7 @@
 
     <section class="sidebar__block">
       <rating-filter
-        :model-value="search.filters.minRating"
+        v-model="search.filters.minRating"
         @update:model-value="search.setFilters({ minRating: $event })"
       />
     </section>
@@ -91,9 +91,7 @@ import RecentSearches from '@/components/search/RecentSearches.vue'
 
 defineOptions({ name: 'SearchSidebar' })
 
-const emit = defineEmits<{
-  'on-pick': [string]
-}>()
+const emits = defineEmits<{ 'on-pick': [string] }>()
 
 const { t } = useLocale()
 const search = useSearchStore()

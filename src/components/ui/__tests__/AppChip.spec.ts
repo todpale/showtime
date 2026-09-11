@@ -1,58 +1,50 @@
-import { mount } from '@vue/test-utils'
 import { vi, it, expect, describe } from 'vitest'
 import AppChip from '@/components/ui/AppChip.vue'
 import { testPlugins } from '@/__tests__/setup.ts'
+import { mount, type VueWrapper } from '@vue/test-utils'
+
+type Props = InstanceType<typeof AppChip>['$props']
+
+const onClickMock = vi.fn()
+
+let wrapper: VueWrapper<any>
+
+function mountWrapper(props: Props, attrs: Record<string, unknown> = {}) {
+  return mount(AppChip, { props, attrs, global: { plugins: testPlugins() } })
+}
 
 describe('AppChip', () => {
   it('renders a button with its label', () => {
-    const wrapper = mount(AppChip, {
-      props: { label: 'Drama' },
-      attrs: { 'data-test': 'genre-chip-drama' },
-      global: { plugins: testPlugins() }
-    })
+    wrapper = mountWrapper({ label: 'Drama' }, { 'data-test': 'genre-chip-drama' })
 
     expect(wrapper.get('[data-test="genre-chip-drama"]').text()).toBe('Drama')
     expect(wrapper.element.tagName).toBe('BUTTON')
   })
 
   it('marks the active chip as pressed', () => {
-    const wrapper = mount(AppChip, {
-      props: { label: 'Drama', active: true },
-      global: { plugins: testPlugins() }
-    })
+    wrapper = mountWrapper({ label: 'Drama', active: true })
 
     expect(wrapper.attributes('aria-pressed')).toBe('true')
     expect(wrapper.classes()).toContain('chip--active')
   })
 
   it('passes the click on to the page', async () => {
-    const onClick = vi.fn()
-    const wrapper = mount(AppChip, {
-      props: { label: 'Drama' },
-      attrs: { onClick },
-      global: { plugins: testPlugins() }
-    })
+    wrapper = mountWrapper({ label: 'Drama' }, { onClick: onClickMock })
 
     await wrapper.trigger('click')
 
-    expect(onClick).toHaveBeenCalledTimes(1)
+    expect(onClickMock).toHaveBeenCalledTimes(1)
   })
 
   it('renders a link when a route is given', () => {
-    const wrapper = mount(AppChip, {
-      props: { label: 'Drama', to: { name: 'genre', params: { slug: 'drama' } } },
-      global: { plugins: testPlugins() }
-    })
+    wrapper = mountWrapper({ label: 'Drama', to: { name: 'genre', params: { slug: 'drama' } } })
 
     expect(wrapper.get('a').attributes('href')).toBe('/genres/drama')
   })
 
   it('shows a dismiss icon when it can be removed', () => {
-    const plain = mount(AppChip, { props: { label: 'Drama' }, global: { plugins: testPlugins() } })
-    const dismissable = mount(AppChip, {
-      props: { label: 'Drama', dismissable: true },
-      global: { plugins: testPlugins() }
-    })
+    const plain = mountWrapper({ label: 'Drama' })
+    const dismissable = mountWrapper({ label: 'Drama', dismissable: true })
 
     expect(plain.find('svg').exists()).toBe(false)
     expect(dismissable.find('svg').exists()).toBe(true)

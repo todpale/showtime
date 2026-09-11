@@ -17,9 +17,10 @@
         v-text="t('search.top')"
       />
 
-      <h2 class="top__title u-display">
-        {{ result.name }}
-      </h2>
+      <h2
+        class="top__title u-display"
+        v-text=" result.name"
+      />
 
       <p
         class="top__meta"

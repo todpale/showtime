@@ -21,7 +21,11 @@ import { ICON_PATHS } from '@/utils/icons'
 
 defineOptions({ name: 'AppIcon' })
 
-withDefaults(defineProps<{ size?: number, name: IconName, filled?: boolean }>(), {
+withDefaults(defineProps<{
+  size?: number
+  name: IconName
+  filled?: boolean
+}>(), {
   size: 16,
   filled: false
 })
@@ -30,6 +34,5 @@ withDefaults(defineProps<{ size?: number, name: IconName, filled?: boolean }>(),
 <style scoped>
 .icon {
   display: block;
-  flex: none;
 }
 </style>

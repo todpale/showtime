@@ -7,7 +7,7 @@
 
     <input
       ref="input"
-      :value="modelValue"
+      v-model="tempModel"
       :placeholder="t('search.placeholder')"
       :aria-label="t('search.placeholder')"
       class="field__input"
@@ -17,7 +17,7 @@
     >
 
     <button
-      v-if="modelValue"
+      v-if="tempModel"
       :aria-label="t('action.clear')"
       class="field__clear"
       type="button"
@@ -35,27 +35,28 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
 import { useLocale } from '@/locales'
+import { onMounted, useTemplateRef } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 
 defineOptions({ name: 'SearchField' })
 
-defineProps<{ modelValue: string }>()
-const emit = defineEmits<{
+const tempModel = defineModel<string>({ default: '' })
+
+const emits = defineEmits<{
   'on-clear': []
   'update:modelValue': [string]
 }>()
 
 const { t } = useLocale()
-const input = ref<HTMLInputElement | null>(null)
+const input = useTemplateRef<HTMLInputElement>('input')
 
-function onInput(event: Event): void {
-  emit('update:modelValue', (event.target as HTMLInputElement).value)
+function onInput(): void {
+  emits('update:modelValue', tempModel.value)
 }
 
 function onClear(): void {
-  emit('on-clear')
+  emits('on-clear')
   input.value?.focus()
 }
 

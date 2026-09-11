@@ -4,13 +4,13 @@
     data-test="poster-div"
   >
     <img
-      v-if="src && !broken"
+      v-if="src && !isBroken"
       :src="src"
       :alt="alt"
       class="poster__img"
       loading="lazy"
       decoding="async"
-      @error="broken = true"
+      @error="isBroken = true"
     >
 
     <span
@@ -28,16 +28,20 @@ import { ref, watch, computed } from 'vue'
 defineOptions({ name: 'PosterImage' })
 
 const props = withDefaults(
-  defineProps<{ alt: string, src: string | null, ratio?: 'poster' | 'still' }>(),
+  defineProps<{
+    alt: string
+    src: string | null,
+    ratio?: 'poster' | 'still'
+  }>(),
   { ratio: 'poster' }
 )
 
-const broken = ref<boolean>(false)
+const isBroken = ref<boolean>(false)
 
 const initials = computed((): string => props.alt.trim().slice(0, 1).toUpperCase())
 
 watch(() => props.src, () => {
-  broken.value = false
+  isBroken.value = false
 })
 </script>
 

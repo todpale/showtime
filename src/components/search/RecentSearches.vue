@@ -14,7 +14,7 @@
         class="recent__clear"
         type="button"
         data-test="recent-clear-btn"
-        @click="emit('on-clear')"
+        @click="emits('on-clear')"
       >
         {{ t('action.clear') }}
       </button>
@@ -32,7 +32,7 @@
           <button
             class="recent__label"
             type="button"
-            @click="emit('on-pick', item)"
+            @click="emits('on-pick', item)"
           >
             {{ item }}
           </button>
@@ -42,7 +42,7 @@
             :data-test="`recent-search-remove-${index}`"
             class="recent__remove"
             type="button"
-            @click="emit('on-remove', item)"
+            @click="emits('on-remove', item)"
           >
             <app-icon
               :size="11"
@@ -62,7 +62,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 defineOptions({ name: 'RecentSearches' })
 
 defineProps<{ items: string[] }>()
-const emit = defineEmits<{
+const emits = defineEmits<{
   'on-clear': []
   'on-pick': [string]
   'on-remove': [string]

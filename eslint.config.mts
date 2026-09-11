@@ -7,15 +7,6 @@ import playwright from 'eslint-plugin-playwright'
 import perfectionist from 'eslint-plugin-perfectionist'
 
 export default [
-  {
-    ignores: [
-      '.output/**',
-      'dist/**',
-      'coverage/**',
-      'artifacts/**',
-      '.data/**'
-    ]
-  },
   ...pluginVue.configs['flat/strongly-recommended'],
   {
     files: ['e2e/**'],

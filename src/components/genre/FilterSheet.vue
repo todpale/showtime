@@ -8,7 +8,7 @@
       class="sheet__scrim"
       type="button"
       data-test="filter-sheet-scrim-btn"
-      @click="emit('on-close')"
+      @click="emits('on-close')"
     />
 
     <div
@@ -29,7 +29,7 @@
           class="sheet__close"
           type="button"
           data-test="filter-close-btn"
-          @click="emit('on-close')"
+          @click="emits('on-close')"
         >
           <app-icon
             :size="16"
@@ -39,7 +39,7 @@
       </div>
 
       <rating-filter
-        :model-value="catalog.filters.minRating"
+        v-model="catalog.filters.minRating"
         @update:model-value="onRating"
       />
 
@@ -85,19 +85,17 @@ import { useLocale } from '@/locales'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import AppChip from '@/components/ui/AppChip.vue'
 import { useCatalogStore } from '@/stores/catalog'
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import RatingFilter from '@/components/genre/RatingFilter.vue'
+import { nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue'
 
 defineOptions({ name: 'FilterSheet' })
 
-const emit = defineEmits<{
-  (e: 'on-close'): void
-}>()
+const emits = defineEmits<{ 'on-close': [] }>()
 
 const { t } = useLocale()
 const catalog = useCatalogStore()
 
-const closeButton = ref<HTMLButtonElement | null>(null)
+const closeButton = useTemplateRef<HTMLButtonElement>('closeButton')
 
 function onRating(value: number | null): void {
   catalog.applyFilters({ minRating: value })
@@ -113,7 +111,7 @@ function onReset(): void {
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape') {
-    emit('on-close')
+    emits('on-close')
   }
 }
 

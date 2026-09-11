@@ -10,7 +10,13 @@
 <script lang="ts" setup>
 defineOptions({ name: 'SkeletonBlock' })
 
-withDefaults(defineProps<{ width?: string, height?: string }>(), { width: '100%', height: '12px' })
+withDefaults(defineProps<{
+  width?: string
+  height?: string
+}>(), {
+  width: '100%',
+  height: '12px'
+})
 </script>
 
 <style scoped>

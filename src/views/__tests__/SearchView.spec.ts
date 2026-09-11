@@ -1,10 +1,12 @@
+import type { Pinia } from 'pinia'
 import { createPinia } from 'pinia'
 import { apiGet } from '@/utils/api'
+import type { Router } from 'vue-router'
 import SearchView from '@/views/SearchView.vue'
 import { useSearchStore } from '@/stores/search'
-import { mount, flushPromises } from '@vue/test-utils'
 import type { HomeFeed, SearchResponse } from '@/models'
 import { makeShow, makeResult } from '@/__tests__/fixtures'
+import { mount, flushPromises, type VueWrapper } from '@vue/test-utils'
 import { vi, it, expect, describe, afterEach, beforeEach } from 'vitest'
 import { testPlugins, stubMatchMedia, createTestRouter } from '@/__tests__/setup.ts'
 
@@ -12,9 +14,9 @@ vi.mock('@/utils/api', () => ({ apiGet: vi.fn(), toQuery: vi.fn(() => '') }))
 
 const apiGetMock = vi.mocked(apiGet)
 
-const GENRES = [{ name: 'Drama', slug: 'drama', total: 120 }]
+const testGenres = [{ name: 'Drama', slug: 'drama', total: 120 }]
 
-const FEED: HomeFeed = {
+const testFeed: HomeFeed = {
   rows: [{ name: 'Drama', slug: 'drama', total: 1, shows: [makeShow({ id: 5, name: 'Fringe' })] }],
   spotlight: null
 }
@@ -22,11 +24,11 @@ const FEED: HomeFeed = {
 function serve(search: SearchResponse | Error): void {
   apiGetMock.mockImplementation((path: string) => {
     if (path === '/genres') {
-      return Promise.resolve(GENRES)
+      return Promise.resolve(testGenres)
     }
 
     if (path === '/home') {
-      return Promise.resolve(FEED)
+      return Promise.resolve(testFeed)
     }
 
     return search instanceof Error ? Promise.reject(search) : Promise.resolve(search)
@@ -41,18 +43,22 @@ function makeResponse(query: string, ids: number[]): SearchResponse {
   }
 }
 
-async function mountView(path = '/search') {
-  const pinia = createPinia()
-  const router = createTestRouter()
+let pinia: Pinia
+let router: Router
+let wrapper: VueWrapper<any>
+
+async function mountWrapper(path = '/search') {
+  pinia = createPinia()
+  router = createTestRouter()
 
   await router.push(path)
   await router.isReady()
 
-  const wrapper = mount(SearchView, { global: { plugins: testPlugins(pinia, router) } })
+  const view = mount(SearchView, { global: { plugins: testPlugins(pinia, router) } })
 
   await flushPromises()
 
-  return { pinia, router, wrapper }
+  return view
 }
 
 describe('SearchView', () => {
@@ -68,14 +74,14 @@ describe('SearchView', () => {
   })
 
   it('runs the query that the url carries', async () => {
-    const { wrapper, pinia } = await mountView('/search?q=dome')
+    wrapper = await mountWrapper('/search?q=dome')
 
     expect(useSearchStore(pinia).submitted).toBe('dome')
     expect(wrapper.get('[data-test="search-count"]').text()).toBe('3 results for “dome”')
   })
 
   it('leads with the best match and lists the rest', async () => {
-    const { wrapper } = await mountView('/search?q=dome')
+    wrapper = await mountWrapper('/search?q=dome')
 
     expect(wrapper.get('[data-test="search-top-result"]').text()).toContain('Show 1')
     expect(wrapper.get('[data-test="search-result-row-1"]').text()).toContain('Show 2')
@@ -85,7 +91,7 @@ describe('SearchView', () => {
   it('says when nothing matches', async () => {
     serve(makeResponse('zzz', []))
 
-    const { wrapper } = await mountView('/search?q=zzz')
+    wrapper = await mountWrapper('/search?q=zzz')
 
     expect(wrapper.get('[data-test="search-empty"]').text()).toContain('Nothing matches “zzz”')
   })
@@ -93,7 +99,7 @@ describe('SearchView', () => {
   it('reports a failure and offers to try again', async () => {
     serve(new Error('TVmaze is unreachable'))
 
-    const { wrapper } = await mountView('/search?q=dome')
+    wrapper = await mountWrapper('/search?q=dome')
 
     expect(wrapper.get('[data-test="search-error"]').text()).toContain('TVmaze is unreachable')
 
@@ -106,7 +112,7 @@ describe('SearchView', () => {
   })
 
   it('shows nothing but the field until something is typed', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.find('[data-test="search-count"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="search-top-result"]').exists()).toBe(false)
@@ -115,7 +121,7 @@ describe('SearchView', () => {
   it('keeps the url in step with what is typed', async () => {
     vi.useFakeTimers()
 
-    const { wrapper, router, pinia } = await mountView()
+    wrapper = await mountWrapper()
 
     await wrapper.get('[data-test="search-input"]').setValue('dome')
 
@@ -130,7 +136,7 @@ describe('SearchView', () => {
   })
 
   it('clears the query, the results and the url', async () => {
-    const { wrapper, router, pinia } = await mountView('/search?q=dome')
+    wrapper = await mountWrapper('/search?q=dome')
 
     await wrapper.get('[data-test="search-clear-btn"]').trigger('click')
     await flushPromises()
@@ -141,7 +147,7 @@ describe('SearchView', () => {
   })
 
   it('searches again from a recent query on a phone', async () => {
-    const { wrapper, pinia } = await mountView('/search?q=dome')
+    wrapper = await mountWrapper('/search?q=dome')
 
     await wrapper.get('[data-test="search-clear-btn"]').trigger('click')
     await flushPromises()
@@ -157,7 +163,7 @@ describe('SearchView', () => {
   })
 
   it('offers a way back on a phone but not the sidebar', async () => {
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.find('[data-test="search-back-btn"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="search-sidebar"]').exists()).toBe(false)
@@ -166,7 +172,7 @@ describe('SearchView', () => {
   it('shows the sidebar and an invitation to search on a desktop', async () => {
     stubMatchMedia(true)
 
-    const { wrapper } = await mountView()
+    wrapper = await mountWrapper()
 
     expect(wrapper.find('[data-test="search-back-btn"]').exists()).toBe(false)
     expect(wrapper.get('[data-test="search-sidebar"]').text()).toContain('Fringe')
@@ -174,7 +180,7 @@ describe('SearchView', () => {
   })
 
   it('goes home from the back button when there is nowhere to go back to', async () => {
-    const { wrapper, router } = await mountView()
+    wrapper = await mountWrapper()
     const push = vi.spyOn(router, 'push')
 
     window.history.replaceState(null, '')
@@ -184,7 +190,7 @@ describe('SearchView', () => {
   })
 
   it('returns to the previous page from the back button', async () => {
-    const { wrapper, router } = await mountView()
+    wrapper = await mountWrapper()
     const back = vi.spyOn(router, 'back')
 
     window.history.replaceState({ back: '/' }, '')
@@ -196,7 +202,7 @@ describe('SearchView', () => {
   })
 
   it('re-sorts the results on request', async () => {
-    const { wrapper, pinia } = await mountView('/search?q=dome')
+    wrapper = await mountWrapper('/search?q=dome')
 
     await wrapper.get('[data-test="sort-control"]').trigger('click')
     await wrapper.get('[data-test="sort-option-rating"]').trigger('click')

@@ -12,11 +12,11 @@
       <button
         v-for="step in steps"
         :key="String(step.value)"
-        :class="['rating-filter__btn', { 'rating-filter__btn--active': step.value === modelValue }]"
-        :aria-pressed="step.value === modelValue"
+        :class="['rating-filter__btn', { 'rating-filter__btn--active': step.value === tempModel }]"
+        :aria-pressed="step.value === tempModel"
         :data-test="`filter-rating-${step.value ?? 'any'}`"
         type="button"
-        @click="emit('update:modelValue', step.value)"
+        @click="emits('update:modelValue', step.value)"
       >
         {{ step.label }}
       </button>
@@ -31,10 +31,11 @@ import type { RatingStep } from '@/models'
 
 defineOptions({ name: 'RatingFilter' })
 
-defineProps<{ modelValue: number | null }>()
-const emit = defineEmits<{ 'update:modelValue': [number | null] }>()
+const emits = defineEmits<{ 'update:modelValue': [number | null] }>()
 
 const { t } = useLocale()
+
+const tempModel = defineModel<number | null>({ default: null })
 
 const steps = computed((): RatingStep[] => [
   { value: null, label: t('filter.any') },

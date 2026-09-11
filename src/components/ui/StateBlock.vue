@@ -20,7 +20,7 @@
       class="state__action"
       type="button"
       data-test="state-retry-btn"
-      @click="emit('on-retry')"
+      @click="emits('on-retry')"
     >
       {{ actionLabel || t('action.retry') }}
     </button>
@@ -44,7 +44,7 @@ withDefaults(
   { hint: '', variant: 'plain', retry: false, test: 'state-div', actionLabel: '' }
 )
 
-const emit = defineEmits<{
+const emits = defineEmits<{
   (e: 'on-retry'): void
 }>()
 

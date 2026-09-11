@@ -11,7 +11,7 @@
       :data-test="`detail-tab-${item.key}`"
       type="button"
       role="tab"
-      @click="emit('update:modelValue', item.key)"
+      @click="emits('update:modelValue', item.key)"
     >
       {{ item.label }}
     </button>
@@ -26,9 +26,7 @@ import type { ShowTab, DetailTab } from '@/models'
 defineOptions({ name: 'ShowTabs' })
 
 defineProps<{ modelValue: DetailTab }>()
-const emit = defineEmits<{
-  'update:modelValue': [DetailTab]
-}>()
+const emits = defineEmits<{ 'update:modelValue': [DetailTab] }>()
 
 const { t } = useLocale()
 

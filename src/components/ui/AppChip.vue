@@ -2,7 +2,6 @@
   <component
     :is="to ? RouterLink : 'button'"
     :to
-
     :type="to ? undefined : 'button'"
     :class="['chip', { 'chip--active': active }]"
     :aria-pressed="to ? undefined : active"

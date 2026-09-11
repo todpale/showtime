@@ -32,7 +32,7 @@
         <form
           class="header__search"
           role="search"
-          @submit.prevent="submit"
+          @submit.prevent="handleSubmit"
         >
           <app-icon
             :size="16"
@@ -54,7 +54,7 @@
           class="header__filter"
           type="button"
           data-test="header-filter-btn"
-          @click="emit('filters')"
+          @click="emits('filters')"
         >
           <app-icon
             :size="17"
@@ -98,7 +98,7 @@ import { useDesktop } from '@/composables/useMediaQuery'
 
 defineOptions({ name: 'AppHeader' })
 
-const emit = defineEmits<{ filters: [] }>()
+const emits = defineEmits<{ filters: [] }>()
 
 const { t } = useLocale()
 const router = useRouter()
@@ -111,7 +111,7 @@ const links = computed((): NavLink[] => [
   { name: 'list', label: t('nav.myList') }
 ])
 
-function submit(): void {
+function handleSubmit(): void {
   const query = term.value.trim()
 
   if (!query) {

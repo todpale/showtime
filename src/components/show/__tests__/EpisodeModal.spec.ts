@@ -1,12 +1,16 @@
-import { mount } from '@vue/test-utils'
 import type { Episode } from '@/models'
-import { ref, defineComponent } from 'vue'
 import { testPlugins } from '@/__tests__/setup.ts'
 import { makeEpisode } from '@/__tests__/fixtures'
+import { ref, type Ref, defineComponent } from 'vue'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { vi, it, expect, describe, afterEach } from 'vitest'
 import EpisodeModal from '@/components/show/EpisodeModal.vue'
 
-function mountModal(episode: Episode = makeEpisode()) {
+let open: Ref<boolean>
+let wrapper: VueWrapper<any>
+let onClose: ReturnType<typeof vi.fn>
+
+function mountWrapper(episode: Episode = makeEpisode()) {
   return mount(EpisodeModal, {
     props: { episode },
     attachTo: document.body,
@@ -19,9 +23,10 @@ function pressKey(key: string): void {
 }
 
 function mountHost() {
-  const open = ref(true)
-  const onClose = vi.fn()
   const episode = makeEpisode()
+
+  open = ref(true)
+  onClose = vi.fn()
 
   const host = defineComponent({
     name: 'ModalHost',
@@ -30,9 +35,7 @@ function mountHost() {
     template: '<episode-modal v-if="open" :episode @on-close="onClose" />'
   })
 
-  const wrapper = mount(host, { attachTo: document.body, global: { plugins: testPlugins() } })
-
-  return { open, onClose, wrapper }
+  return mount(host, { attachTo: document.body, global: { plugins: testPlugins() } })
 }
 
 describe('EpisodeModal', () => {
@@ -41,7 +44,7 @@ describe('EpisodeModal', () => {
   })
 
   it('names the episode in its title', () => {
-    const wrapper = mountModal(makeEpisode({ name: 'The Fire' }))
+    wrapper = mountWrapper(makeEpisode({ name: 'The Fire' }))
 
     expect(wrapper.get('[data-test="episode-modal-title"]').text()).toBe('The Fire')
 
@@ -49,7 +52,7 @@ describe('EpisodeModal', () => {
   })
 
   it('shows the season code and the runtime', () => {
-    const wrapper = mountModal(makeEpisode({ season: 2, number: 5, runtime: 42 }))
+    wrapper = mountWrapper(makeEpisode({ season: 2, number: 5, runtime: 42 }))
 
     expect(wrapper.get('[data-test="episode-modal-code"]').text()).toBe('S2:E5 · 42m')
 
@@ -57,7 +60,7 @@ describe('EpisodeModal', () => {
   })
 
   it('leaves out the runtime when the episode has none', () => {
-    const wrapper = mountModal(makeEpisode({ season: 1, number: 1, runtime: null }))
+    wrapper = mountWrapper(makeEpisode({ season: 1, number: 1, runtime: null }))
 
     expect(wrapper.get('[data-test="episode-modal-code"]').text()).toBe('S1:E1')
 
@@ -65,7 +68,7 @@ describe('EpisodeModal', () => {
   })
 
   it('falls back to the first episode number when the episode is unnumbered', () => {
-    const wrapper = mountModal(makeEpisode({ season: 3, number: null, runtime: null }))
+    wrapper = mountWrapper(makeEpisode({ season: 3, number: null, runtime: null }))
 
     expect(wrapper.get('[data-test="episode-modal-code"]').text()).toBe('S3:E1')
 
@@ -73,7 +76,7 @@ describe('EpisodeModal', () => {
   })
 
   it('lists the air date and the rating with one decimal', () => {
-    const wrapper = mountModal(makeEpisode({ airdate: '2013-06-24', rating: 8 }))
+    wrapper = mountWrapper(makeEpisode({ airdate: '2013-06-24', rating: 8 }))
 
     expect(wrapper.get('[data-test="episode-modal-airdate"]').text()).toBe('2013-06-24')
     expect(wrapper.get('[data-test="episode-modal-rating"]').text()).toBe('8.0')
@@ -82,7 +85,7 @@ describe('EpisodeModal', () => {
   })
 
   it('hides the air date when the episode never aired', () => {
-    const wrapper = mountModal(makeEpisode({ airdate: null }))
+    wrapper = mountWrapper(makeEpisode({ airdate: null }))
 
     expect(wrapper.find('[data-test="episode-modal-airdate"]').exists()).toBe(false)
 
@@ -90,7 +93,7 @@ describe('EpisodeModal', () => {
   })
 
   it('hides the rating when the episode has none', () => {
-    const wrapper = mountModal(makeEpisode({ rating: null }))
+    wrapper = mountWrapper(makeEpisode({ rating: null }))
 
     expect(wrapper.find('[data-test="episode-modal-rating"]').exists()).toBe(false)
 
@@ -98,8 +101,8 @@ describe('EpisodeModal', () => {
   })
 
   it('shows the summary and hides it when there is nothing to read', () => {
-    const withText = mountModal(makeEpisode({ summary: 'The dome comes down.' }))
-    const withoutText = mountModal(makeEpisode({ summary: '' }))
+    const withText = mountWrapper(makeEpisode({ summary: 'The dome comes down.' }))
+    const withoutText = mountWrapper(makeEpisode({ summary: '' }))
 
     expect(withText.get('[data-test="episode-modal-summary"]').text()).toBe('The dome comes down.')
     expect(withoutText.find('[data-test="episode-modal-summary"]').exists()).toBe(false)
@@ -109,7 +112,7 @@ describe('EpisodeModal', () => {
   })
 
   it('asks the page to close from the close button', async () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     await wrapper.get('[data-test="episode-modal-close-btn"]').trigger('click')
 
@@ -119,7 +122,7 @@ describe('EpisodeModal', () => {
   })
 
   it('asks the page to close from the scrim behind the panel', async () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     await wrapper.get('[data-test="episode-modal-scrim-btn"]').trigger('click')
 
@@ -129,7 +132,7 @@ describe('EpisodeModal', () => {
   })
 
   it('asks the page to close when Escape is pressed', () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     pressKey('Escape')
 
@@ -139,7 +142,7 @@ describe('EpisodeModal', () => {
   })
 
   it('stays open on any other key', () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     pressKey('Enter')
     pressKey('a')
@@ -150,7 +153,7 @@ describe('EpisodeModal', () => {
   })
 
   it('stops listening for Escape once it is gone', async () => {
-    const { open, onClose, wrapper } = mountHost()
+    wrapper = mountHost()
 
     pressKey('Escape')
 
@@ -172,7 +175,7 @@ describe('EpisodeModal', () => {
     const added = vi.spyOn(window, 'addEventListener')
     const removed = vi.spyOn(window, 'removeEventListener')
 
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     const registrations = added.mock.calls.filter(([type]) => type === 'keydown')
 
@@ -187,7 +190,7 @@ describe('EpisodeModal', () => {
   })
 
   it('moves the focus onto the close button so the keyboard starts inside the dialog', async () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     await wrapper.vm.$nextTick()
 
@@ -197,7 +200,7 @@ describe('EpisodeModal', () => {
   })
 
   it('announces itself as a modal dialog labelled by its title', () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     const panel = wrapper.get('[role="dialog"]')
     const title = wrapper.get('[data-test="episode-modal-title"]')
@@ -209,7 +212,7 @@ describe('EpisodeModal', () => {
   })
 
   it('offers no way to watch the episode', () => {
-    const wrapper = mountModal()
+    wrapper = mountWrapper()
 
     expect(wrapper.find('[data-test*="play"]').exists()).toBe(false)
     expect(wrapper.find('[data-test*="watch"]').exists()).toBe(false)

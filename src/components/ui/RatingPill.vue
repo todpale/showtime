@@ -25,7 +25,10 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 
 defineOptions({ name: 'RatingPill' })
 
-const props = withDefaults(defineProps<{ size?: 'sm' | 'lg'; rating: number | null, }>(), { size: 'sm' })
+const props = withDefaults(defineProps<{
+  size?: 'sm' | 'lg'
+  rating: number | null
+}>(), { size: 'sm' })
 
 const { t } = useLocale()
 

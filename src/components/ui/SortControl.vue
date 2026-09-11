@@ -1,12 +1,12 @@
 <template>
   <div class="sort">
     <button
-      :aria-expanded="open"
+      :aria-expanded="isOpened"
       class="sort__toggle"
       type="button"
       aria-haspopup="listbox"
       data-test="sort-control"
-      @click="open = !open"
+      @click="isOpened = !isOpened"
     >
       <span class="sort__pill">
         <app-icon
@@ -19,7 +19,7 @@
     </button>
 
     <ul
-      v-if="open"
+      v-if="isOpened"
       class="sort__menu"
       role="listbox"
     >
@@ -28,12 +28,12 @@
         :key="option.key"
       >
         <button
-          :class="['sort__option', { 'sort__option--active': option.key === modelValue }]"
-          :aria-selected="option.key === modelValue"
+          :class="['sort__option', { 'sort__option--active': option.key === tempModel }]"
+          :aria-selected="option.key === tempModel"
           :data-test="`sort-option-${option.key}`"
           type="button"
           role="option"
-          @click="select(option.key)"
+          @click="handleSelect(option.key)"
         >
           {{ option.label }}
         </button>
@@ -50,19 +50,22 @@ import type { SortKey, SortOption } from '@/models'
 
 defineOptions({ name: 'SortControl' })
 
-const props = defineProps<{ modelValue: SortKey, options: SortOption[] }>()
-const emit = defineEmits<{ 'update:modelValue': [SortKey] }>()
+const props = defineProps<{ options: SortOption[] }>()
+const emits = defineEmits<{ 'update:modelValue': [SortKey] }>()
 
 const { t } = useLocale()
-const open = ref<boolean>(false)
 
-const activeLabel = computed(
-  (): string => props.options.find((option) => option.key === props.modelValue)?.label ?? ''
-)
+const tempModel = defineModel<SortKey>()
 
-function select(key: SortKey): void {
-  open.value = false
-  emit('update:modelValue', key)
+const isOpened = ref<boolean>(false)
+
+const activeLabel = computed((): string => {
+  return props.options.find((option) => option.key === tempModel.value)?.label ?? ''
+})
+
+function handleSelect(key: SortKey): void {
+  isOpened.value = false
+  emits('update:modelValue', key)
 }
 </script>
 

@@ -9,9 +9,8 @@
         <h2
           class="row__title u-display"
           data-test="genre-row-title"
-        >
-          {{ row.name }}
-        </h2>
+          v-text="row.name"
+        />
 
         <p
           class="row__sub"
@@ -58,14 +57,14 @@ import { RouterLink } from 'vue-router'
 import type { GenreRow } from '@/models'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import ShowCard from '@/components/show/ShowCard.vue'
-import { ref, onActivated, onDeactivated } from 'vue'
+import { onActivated, onDeactivated, useTemplateRef } from 'vue'
 
 defineOptions({ name: 'GenreRow' })
 
 defineProps<{ row: GenreRow }>()
 
 const { t } = useLocale()
-const track = ref<HTMLUListElement | null>(null)
+const track = useTemplateRef<HTMLUListElement>('track')
 
 let offset = 0
 let restoring = false

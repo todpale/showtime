@@ -50,7 +50,10 @@ import PosterImage from '@/components/ui/PosterImage.vue'
 
 defineOptions({ name: 'ResultRow' })
 
-const props = defineProps<{ index: number; result: SearchResult, }>()
+const props = defineProps<{
+  index: number
+  result: SearchResult
+}>()
 
 const meta = computed((): string => joinMeta([
   props.result.genres.slice(0, 2).join(' '),

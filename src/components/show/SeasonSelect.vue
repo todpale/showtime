@@ -3,7 +3,9 @@
     <label
       class="u-visually-hidden"
       for="season-select"
-    >{{ t('show.season', { number: modelValue }) }}</label>
+    >
+      {{ t('show.season', { number: modelValue }) }}
+    </label>
 
     <div class="season__control">
       <select
@@ -42,13 +44,17 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 
 defineOptions({ name: 'SeasonSelect' })
 
-defineProps<{ count: number; seasons: number[], modelValue: number }>()
-const emit = defineEmits<{ 'update:modelValue': [number] }>()
+defineProps<{
+  count: number
+  seasons: number[]
+  modelValue: number
+}>()
+const emits = defineEmits<{ 'update:modelValue': [number] }>()
 
 const { t } = useLocale()
 
 function onChange(event: Event): void {
-  emit('update:modelValue', Number((event.target as HTMLSelectElement).value))
+  emits('update:modelValue', Number((event.target as HTMLSelectElement).value))
 }
 </script>
 
